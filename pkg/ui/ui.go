@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
 
-	"golang.org/x/term"
+	"github.com/jimed-rand/fediscord/pkg/terminal"
 )
 
 func PrintHeader(title string) {
-	fmt.Print("\033[H\033[2J")
+	fmt.Print(terminal.ClearScreen())
 	width := 59
 	padding := width - len(title) - 2
 	if padding < 0 {
@@ -26,7 +25,7 @@ func PrintHeader(title string) {
 }
 
 func PrintMenu() {
-	fmt.Println("1) Setup Configuration (Discord Token + Fediverse Handle)")
+	fmt.Println("1) Set Up Configuration (Discord Token + Fediverse Handle)")
 	fmt.Println("2) Generate Connection URL")
 	fmt.Println("3) View Stored Configuration")
 	fmt.Println("4) Update Discord Token")
@@ -53,7 +52,7 @@ func Prompt(label string) string {
 
 func PromptSecret(label string) (string, error) {
 	fmt.Print(label)
-	raw, err := term.ReadPassword(int(syscall.Stdin))
+	raw, err := terminal.ReadPassword()
 	fmt.Println()
 	if err != nil {
 		return "", err

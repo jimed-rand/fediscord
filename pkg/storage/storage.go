@@ -4,14 +4,18 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
-	"github.com/jimed-rand/fediscord/internal/config"
+	"github.com/jimed-rand/fediscord/pkg/config"
 )
 
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = errors.New("the requested credential was not found in the local configuration store")
 
 func IsGPGAvailable() bool {
+	if runtime.GOOS == "windows" {
+		return false
+	}
 	_, err := exec.LookPath("gpg")
 	return err == nil
 }
@@ -56,7 +60,7 @@ func StoreTokenPlain(paths *config.Paths, token string) error {
 func RetrieveToken(paths *config.Paths) (string, error) {
 	if fileExists(paths.TokenEncrypted) {
 		if !IsGPGAvailable() {
-			return "", errors.New("GPG is not available but an encrypted token exists")
+			return "", errors.New("GPG is not available on this system, however an encrypted token was detected; please install GPG to proceed")
 		}
 		out, err := exec.Command("gpg", "--decrypt", "--quiet", paths.TokenEncrypted).Output()
 		if err != nil {
