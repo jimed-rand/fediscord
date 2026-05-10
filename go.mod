@@ -1,5 +1,7 @@
 module github.com/jimed-rand/fediscord
 
-go 1.21
+go 1.25.0
 
-require golang.org/x/term v0.18.0
+require golang.org/x/term v0.43.0
+
+require golang.org/x/sys v0.44.0 // indirect

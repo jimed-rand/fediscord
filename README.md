@@ -18,6 +18,7 @@ A terminal-based utility for establishing a verified connection between a Mastod
 - [Installation](#installation)
 - [Uninstallation](#uninstallation)
 - [Usage](#usage)
+  - [Command-line options](#command-line-options)
   - [Main Menu](#main-menu)
   - [1 — Set Up Configuration](#1--set-up-configuration)
   - [2 — Generate Connection URL](#2--generate-connection-url)
@@ -43,7 +44,7 @@ A terminal-based utility for establishing a verified connection between a Mastod
 
 `fediscord` is a portable command-line tool implemented in Go. Its primary function is to facilitate the linkage of a Fediverse identity to a Discord account by generating the authorisation URL that the Discord connections system requires. The tool communicates with the Discord API v9 endpoint designated for Mastodon-type connections (`/api/v9/connections/mastodon/authorize`).
 
-The entire operation is conducted through an interactive terminal interface. No positional arguments or flag-based invocation are required; all inputs are solicited at runtime through a numbered menu system. Credentials are persisted in a platform-appropriate local directory with restrictive access permissions, and the Discord token may optionally be protected at rest using GPG symmetric AES-256 encryption on supported platforms.
+The primary workflow is an interactive numbered menu. Optional command-line flags (`--help`, `--version`, `--print-config-path`) exit immediately without starting the menu; positional arguments are rejected. Credentials are persisted in a platform-appropriate local directory with restrictive access permissions, and the Discord token may optionally be protected at rest using GPG symmetric AES-256 encryption on supported platforms.
 
 The application has been designed to operate across Linux distributions, macOS (both Intel and Apple Silicon), and Microsoft Windows, with platform-specific behaviour abstracted through Go build constraints and a dedicated terminal abstraction package.
 
@@ -98,9 +99,8 @@ The following target combinations are supported and may be compiled via the Make
 fediscord/
 ├── cmd/
 │   └── fediscord/
-│       ├── main.go       Entry point, menu loop, and application lifecycle management
-│       ├── setup.go      Configuration set-up and configuration view handlers
-│       └── actions.go    URL generation, credential update, encryption, and deletion handlers
+│       ├── main.go       Entry point (flags, menu loop, lifecycle)
+│       └── actions.go    Configuration, URL generation, credential updates, encryption, deletion
 ├── pkg/
 │   ├── config/
 │   │   └── config.go     Platform-aware configuration path resolution and directory initialisation
@@ -249,9 +249,19 @@ Or from the project root prior to installation:
 ./fediscord
 ```
 
-No command-line arguments, flags, or environment variables are required. All interactions are conducted through the numbered interactive menu.
+Interactive use does not require environment variables; unknown command-line arguments are rejected (see `--help`). The numbered menu summarises stored credentials without touching your token unless you choose an operation that needs it, shows a suggested next step, and groups entries under **Getting started**, **Daily use**, **Maintenance**, and **Danger zone**. From the prompt you can type **`h`** or **`?`** for an in-program help screen (paths, glossary, security notes).
+
+### Command-line options
+
+| Flag | Meaning |
+|------|---------|
+| `-h`, `--help` | Print usage text and exit. |
+| `--version` | Print the embedded release string (see `LDFLAGS` in the `Makefile`) and exit. |
+| `--print-config-path` | Print the resolved configuration directory and file paths (no secrets) and exit. |
 
 ### Main Menu
+
+The interface clears the screen between views (where the terminal supports it). A typical main screen looks like the following (group labels and **Status** / **Next** lines reflect your local state):
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
@@ -260,13 +270,34 @@ No command-line arguments, flags, or environment variables are required. All int
 ║  Main Menu                                               ║
 ╚═══════════════════════════════════════════════════════════╝
 
+This tool builds the Discord authorisation URL used to link your
+Fediverse account (Mastodon-style API) to your Discord profile.
+Your token and handle are stored only on this computer.
+
+Status  Discord token: yes    Fediverse handle: yes
+Next    Choose 2 — Generate Connection URL — then open it in your browser.
+
+───────────────────────────────────────────────────────────
+Getting started
+───────────────────────────────────────────────────────────
 1) Set Up Configuration (Discord Token + Fediverse Handle)
+───────────────────────────────────────────────────────────
+Daily use
+───────────────────────────────────────────────────────────
 2) Generate Connection URL
 3) View Stored Configuration
+───────────────────────────────────────────────────────────
+Maintenance
+───────────────────────────────────────────────────────────
 4) Update Discord Token
 5) Update Fediverse Handle
 6) Change Encryption Settings
+───────────────────────────────────────────────────────────
+Danger zone
+───────────────────────────────────────────────────────────
 7) Delete All Data
+───────────────────────────────────────────────────────────
+
 8) Exit
 
 ───────────────────────────────────────────────────────────

@@ -31,6 +31,15 @@ func GenerateConnectionURL(handle, token string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return "", fmt.Errorf("Discord API returned HTTP 401 Unauthorized; the token may be invalid, revoked, or missing expected headers")
+		default:
+			return "", fmt.Errorf("Discord API returned HTTP %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
+		}
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("the response body could not be read: %w", err)

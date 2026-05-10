@@ -56,6 +56,6 @@ func Load() (*Paths, error) {
 	}, nil
 }
 
-func (p *Paths) Initialise() error {
+func (p *Paths) Initialize() error {
 	return os.MkdirAll(p.Dir, 0700)
 }

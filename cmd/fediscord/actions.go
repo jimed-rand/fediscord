@@ -4,33 +4,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jimed-rand/fediscord/internal/config"
-	"github.com/jimed-rand/fediscord/internal/discord"
-	"github.com/jimed-rand/fediscord/internal/fediverse"
-	"github.com/jimed-rand/fediscord/internal/storage"
-	"github.com/jimed-rand/fediscord/internal/ui"
+	"github.com/jimed-rand/fediscord/pkg/config"
+	"github.com/jimed-rand/fediscord/pkg/discord"
+	"github.com/jimed-rand/fediscord/pkg/fediverse"
+	"github.com/jimed-rand/fediscord/pkg/storage"
+	"github.com/jimed-rand/fediscord/pkg/ui"
 )
 
-func askAndStoreToken(paths *config.Paths) error {
-	useEncryption, err := askEncryptionPreference(paths)
-	if err != nil {
-		return err
-	}
-
-	token, err := ui.PromptSecret("Enter your Discord token (input hidden): ")
-	if err != nil {
-		return fmt.Errorf("failed to read token: %w", err)
-	}
-	if token == "" {
-		return errors.New("token cannot be empty")
-	}
-
-	return storeToken(paths, token, useEncryption)
-}
-
-func askEncryptionPreference(paths *config.Paths) (bool, error) {
-	if _, err := storage.IsEncryptionEnabled(paths); err == nil {
-		return storage.IsEncryptionEnabled(paths)
+func askEncryptionPreference(paths *config.Paths, reuseSaved bool) (bool, error) {
+	if reuseSaved {
+		if en, err := storage.IsEncryptionEnabled(paths); err == nil {
+			return en, nil
+		}
 	}
 
 	if !storage.IsGPGAvailable() {
@@ -110,7 +95,7 @@ func setupConfiguration(paths *config.Paths) {
 	ui.Warn("  It gives FULL access to your Discord account!")
 	fmt.Println()
 
-	useEncryption, err := askEncryptionPreference(paths)
+	useEncryption, err := askEncryptionPreference(paths, true)
 	if err != nil {
 		ui.Error(err.Error())
 		ui.PressEnter()
@@ -328,6 +313,11 @@ func updateFediverseHandle(paths *config.Paths) {
 	version, err := fediverse.CheckMastodonAPISupport(instance)
 	if err != nil {
 		ui.Warn(err.Error())
+		if !ui.Confirm("Do you want to continue anyway? (yes/no): ") {
+			ui.Info("Update cancelled")
+			ui.PressEnter()
+			return
+		}
 	} else {
 		ui.Success("Instance is running: " + version)
 	}
@@ -361,7 +351,7 @@ func changeEncryption(paths *config.Paths) {
 			return
 		}
 
-		useEncryption, err := askEncryptionPreference(paths)
+		useEncryption, err := askEncryptionPreference(paths, false)
 		if err != nil {
 			ui.Error(err.Error())
 			ui.PressEnter()
@@ -378,7 +368,7 @@ func changeEncryption(paths *config.Paths) {
 	} else {
 		ui.Info("No existing Discord token found.")
 		fmt.Println()
-		_, err := askEncryptionPreference(paths)
+		_, err := askEncryptionPreference(paths, false)
 		if err != nil {
 			ui.Error(err.Error())
 			ui.PressEnter()
@@ -387,6 +377,42 @@ func changeEncryption(paths *config.Paths) {
 		ui.Success("Encryption preference saved for future tokens")
 	}
 
+	fmt.Println()
+	ui.PressEnter()
+}
+
+func showHelpScreen(paths *config.Paths) {
+	ui.PrintHeader("Help")
+
+	ui.Info("What this tool does:")
+	ui.Info("  Discord Connections can verify a Mastodon-compatible Fediverse account.")
+	ui.Info("  fediscord calls Discord API v9 mastodon authorize and prints the URL you open")
+	ui.Info("  in your browser to complete the link.")
+	fmt.Println()
+
+	ui.Info("Discord token (advanced):")
+	ui.Info("  You need your Discord account user token (what the Discord client uses), not a bot token.")
+	ui.Info("  It is equivalent to password-level access — never share or commit it.")
+	ui.Info("  How to retrieve it:")
+	ui.Info("  https://gist.github.com/MarvNC/e601f3603df22f36ebd3102c501116c6")
+	fmt.Println()
+
+	ui.Info("Fediverse handle:")
+	ui.Info("  Shape: username@instance.example (leading @ optional).")
+	ui.Info("  This tool checks /api/v1/instance; Misskey forks are incompatible.")
+	fmt.Println()
+
+	ui.Info("Where data is stored (paths only; no secrets):")
+	ui.Separator()
+	ui.Info("  Directory:          " + paths.Dir)
+	ui.Info("  Token (plain):      " + paths.TokenPlain)
+	ui.Info("  Token (encrypted):  " + paths.TokenEncrypted)
+	ui.Info("  Handle:             " + paths.HandleFile)
+	ui.Info("  Encryption flag:    " + paths.EncryptionFlag)
+	ui.Separator()
+	fmt.Println()
+
+	ui.Info("Menu: choose 1-8, or type h / ? for this help screen.")
 	fmt.Println()
 	ui.PressEnter()
 }

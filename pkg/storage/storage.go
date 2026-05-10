@@ -107,6 +107,10 @@ func IsPlainTokenPresent(paths *config.Paths) bool {
 	return fileExists(paths.TokenPlain)
 }
 
+func IsHandlePresent(paths *config.Paths) bool {
+	return fileExists(paths.HandleFile)
+}
+
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
