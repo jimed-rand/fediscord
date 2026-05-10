@@ -392,7 +392,7 @@ func showHelpScreen(paths *config.Paths) {
 
 	ui.Info("Discord token (advanced):")
 	ui.Info("  You need your Discord account user token (what the Discord client uses), not a bot token.")
-	ui.Info("  It is equivalent to password-level access — never share or commit it.")
+	ui.Info("  It is equivalent to password-level access; never share or commit it.")
 	ui.Info("  How to retrieve it:")
 	ui.Info("  https://gist.github.com/MarvNC/e601f3603df22f36ebd3102c501116c6")
 	fmt.Println()

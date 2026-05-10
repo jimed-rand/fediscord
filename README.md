@@ -249,7 +249,7 @@ Or from the project root prior to installation:
 ./fediscord
 ```
 
-Interactive use does not require environment variables; unknown command-line arguments are rejected (see `--help`). The numbered menu summarises stored credentials without touching your token unless you choose an operation that needs it, shows a suggested next step, and groups entries under **Getting started**, **Daily use**, **Maintenance**, and **Danger zone**. From the prompt you can type **`h`** or **`?`** for an in-program help screen (paths, glossary, security notes).
+Interactive use does not require environment variables; unknown command-line arguments are rejected (see `--help`). The interface uses plain ASCII (no box-drawing icons), groups menu entries under **Getting started**, **Daily use**, **Maintenance**, and **Danger zone**, and shows a plain status line and suggested next step without reading your Discord token unless you choose an operation that needs it. From the prompt you can type **`h`** or **`?`** for an in-program help screen (paths, glossary, security notes).
 
 ### Command-line options
 
@@ -261,51 +261,56 @@ Interactive use does not require environment variables; unknown command-line arg
 
 ### Main Menu
 
-The interface clears the screen between views (where the terminal supports it). A typical main screen looks like the following (group labels and **Status** / **Next** lines reflect your local state):
+The interface clears the screen between views (where the terminal supports it). A typical main screen looks like the following (status and wording reflect your local state):
 
 ```
-╔═══════════════════════════════════════════════════════════╗
-║  Fediverse to Discord Connection Tool (Mastodon API)     ║
-╠═══════════════════════════════════════════════════════════╣
-║  Main Menu                                               ║
-╚═══════════════════════════════════════════════════════════╝
+================================================================
+  Fediverse to Discord Connection Tool (Mastodon API)
+----------------------------------------------------------------
+  Main Menu
+================================================================
 
 This tool builds the Discord authorisation URL used to link your
 Fediverse account (Mastodon-style API) to your Discord profile.
 Your token and handle are stored only on this computer.
 
-Status  Discord token: yes    Fediverse handle: yes
-Next    Choose 2 — Generate Connection URL — then open it in your browser.
+Status: Discord token saved: yes  |  Fediverse handle saved: yes
+Next: choose 2 (Generate Connection URL), then open it in your browser.
 
-───────────────────────────────────────────────────────────
 Getting started
-───────────────────────────────────────────────────────────
-1) Set Up Configuration (Discord Token + Fediverse Handle)
-───────────────────────────────────────────────────────────
+  1) Set Up Configuration (Discord Token + Fediverse Handle)
+
 Daily use
-───────────────────────────────────────────────────────────
-2) Generate Connection URL
-3) View Stored Configuration
-───────────────────────────────────────────────────────────
+  2) Generate Connection URL
+  3) View Stored Configuration
+
 Maintenance
-───────────────────────────────────────────────────────────
-4) Update Discord Token
-5) Update Fediverse Handle
-6) Change Encryption Settings
-───────────────────────────────────────────────────────────
+  4) Update Discord Token
+  5) Update Fediverse Handle
+  6) Change Encryption Settings
+
 Danger zone
-───────────────────────────────────────────────────────────
-7) Delete All Data
-───────────────────────────────────────────────────────────
+  7) Delete All Data
 
-8) Exit
+Exit
+  8) Exit
 
-───────────────────────────────────────────────────────────
-Compatible Platforms (Mastodon API):
-  + Mastodon  + Akkoma  + Pleroma  + GlitchSoc  + Hometown
-Incompatible Platforms:
-  - Misskey  - Firefish  - Calckey  - Foundkey
-───────────────────────────────────────────────────────────
+----------------------------------------------------------------
+Fediverse stacks and Mastodon-compatible API:
+  Discord Mastodon Connections expect a Mastodon-style REST API (for example
+  `/api/v1/instance`). Your instance must expose that protocol for this tool to
+  validate your handle and for linking to succeed.
+
+  Usually okay (known to ship Mastodon API compatibility):
+    Mastodon, Akkoma, Pleroma, GlitchSoc, Hometown, and peers that emulate
+    the same Mastodon v1 endpoints.
+
+  Not usable here (different API; Misskey-derived, not Mastodon-compatible):
+    Misskey, Firefish, Calckey, Foundkey - they use another API layout, so
+    ownership checks Discord expects cannot be completed.
+
+  Not sure? Use option 1: the tool probes your instance; you can bail out.
+----------------------------------------------------------------
 ```
 
 ---
@@ -493,7 +498,7 @@ The following platform-specific notes apply to operation on Microsoft Windows:
 - **GPG encryption is not supported.** The Discord token will be stored in plain text within the `%APPDATA%\fediverse-discord\` directory. File-system access controls native to Windows (NTFS permissions) provide the primary means of access restriction.
 - **Terminal clear screen behaviour differs.** On Windows, the ANSI escape sequence used to clear the terminal on Unix-like systems is not emitted. The screen is not cleared between menu transitions on Windows terminals that do not support ANSI. This does not affect functionality.
 - **The `make install` target is not supported natively on Windows.** To install the binary system-wide, manually copy the compiled `.exe` file to a directory present in your `PATH` environment variable.
-- **Unicode box-drawing characters** used in the menu interface require a terminal emulator with appropriate Unicode support, such as Windows Terminal. The tool functions correctly in Windows Terminal; compatibility with the legacy `cmd.exe` console host is not guaranteed for all visual elements.
+- **Terminal font:** The interactive UI uses ASCII lines and punctuation so it behaves well in legacy `cmd.exe` as well as Windows Terminal (UTF-8 may still appear in pasted URLs or instance names elsewhere).
 - **Compilation on Windows** requires either Go for Windows, WSL, or MSYS2 with make installed.
 
 ---
