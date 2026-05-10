@@ -25,25 +25,21 @@ help:
 	@printf "\n"
 	@printf "  fediscord — Fediverse to Discord Connection Tool\n"
 	@printf "  Version : %s\n\n" "$(VERSION)"
-	@printf "  ── Standard Targets ────────────────────────────────────────\n\n"
-	@printf "    make build          Compile for the current host platform\n"
-	@printf "    make install        Install to $(DESTDIR)/usr/local/bin\n"
+	@printf "  ── Host (current OS/arch) ─────────────────────────────────\n\n"
+	@printf "    make build          ./fediscord or ./fediscord.exe\n"
+	@printf "    make install        Install to $(DESTDIR)/usr/local/bin (Unix-like)\n"
 	@printf "    make uninstall      Remove from $(DESTDIR)/usr/local/bin\n"
-	@printf "    make clean          Remove all compiled artefacts\n"
+	@printf "    make clean          Remove ./fediscord (.exe) and ./dist/\n"
 	@printf "    make deps           Fetch and tidy module dependencies\n"
 	@printf "    make tidy           Run go mod tidy\n"
-	@printf "    make vet            Run static analysis via go vet\n"
-	@printf "    make release        Compile all supported platforms\n\n"
-	@printf "  ── Platform-Specific Targets ───────────────────────────────\n\n"
-	@printf "    make linux-amd64    Linux   — x86_64\n"
-	@printf "    make linux-arm64    Linux   — ARM64 (AArch64)\n"
-	@printf "    make linux-arm      Linux   — ARMv6 (Raspberry Pi etc.)\n"
-	@printf "    make linux-386      Linux   — x86 (32-bit)\n"
-	@printf "    make darwin-amd64   macOS   — Intel\n"
-	@printf "    make darwin-arm64   macOS   — Apple Silicon (M-series)\n"
-	@printf "    make windows-amd64  Windows — x86_64\n"
-	@printf "    make windows-arm64  Windows — ARM64\n"
-	@printf "    make windows-386    Windows — x86 (32-bit)\n\n"
+	@printf "    make vet            Run static analysis via go vet\n\n"
+	@printf "  ── Cross-compile into ./dist/ (Unix-like + Windows) ────────\n\n"
+	@printf "    Unix-like artifacts (Linux / macOS CPUs):\n"
+	@printf "      make linux-amd64 linux-arm64 linux-arm linux-386\n"
+	@printf "      make darwin-amd64 darwin-arm64\n\n"
+	@printf "    Windows artifacts (.exe):\n"
+	@printf "      make windows-amd64 windows-arm64 windows-386\n\n"
+	@printf "    All of the above:  make release\n\n"
 	@printf "  ── Override ────────────────────────────────────────────────\n\n"
 	@printf "    make install DESTDIR=/custom/prefix\n\n"
 
@@ -80,7 +76,7 @@ uninstall:
 
 clean:
 	@printf "  [--] Removing compiled artefacts...\n"
-	rm -f ./$(BINARY)
+	rm -f ./$(BINARY) ./$(BINARY).exe
 	rm -rf ./dist
 	@printf "  [OK] Working directory is clean.\n"
 

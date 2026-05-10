@@ -8,7 +8,7 @@ A terminal-based utility for establishing a verified connection between a Mastod
 
 - [Overview](#overview)
 - [Platform Compatibility](#platform-compatibility)
-- [Supported Operating Systems and Architectures](#supported-operating-systems-and-architectures)
+- [Supported operating systems (Unix-like and Windows)](#supported-operating-systems-unix-like-and-windows)
 - [Project Structure](#project-structure)
 - [Requirements](#requirements)
 - [Building](#building)
@@ -52,7 +52,15 @@ The application has been designed to operate across Linux distributions, macOS (
 
 ## Platform Compatibility
 
-The tool is designed for use with Fediverse instances that implement the Mastodon-compatible REST API. Compatibility is determined by the presence and structure of the `/api/v1/instance` response returned by the instance server. The following platforms are known to be compatible:
+Discord’s “Mastodon” connection type is built around the **Mastodon-compatible public REST API** that many ActivityPub servers implement: a familiar set of paths and JSON shapes (notably under `/api/v1/…`) that tools and clients expect when they talk to a “Mastodon-like” instance. This project is only useful when **your home instance speaks that API well enough** for Discord’s flow to finish.
+
+### What fediscord checks
+
+During set-up, the tool requests `https://<your-instance>/api/v1/instance` and inspects the JSON. A valid Mastodon-style `instance` response is a strong signal that the server is in the right ecosystem. The tool also scans the reported **version** string for known **incompatible** product identifiers (Misskey-family names). Those checks are **heuristic**: they cover common setups but cannot certify every Fediverse fork.
+
+### Servers that typically support the Mastodon API
+
+These implementations generally aim for Mastodon API compatibility so third-party apps and integrations work; Discord’s linkage targets that same compatibility layer:
 
 | Platform  | API Compatibility |
 |-----------|-------------------|
@@ -62,7 +70,11 @@ The tool is designed for use with Fediverse instances that implement the Mastodo
 | GlitchSoc | Supported         |
 | Hometown  | Supported         |
 
-The following platforms implement a divergent API architecture (the Misskey API) and are consequently incompatible with the Discord Mastodon connection mechanism:
+Other hosts may still work if they **implement Mastodon-compatible v1 endpoints**; not being listed above does not automatically mean unsupported. When in doubt, use set-up (**option 1**) to run the live probe, or confirm with your instance’s docs.
+
+### Servers that use the Misskey API family (not compatible here)
+
+Misskey and forks built on its stack expose a **different** HTTP API (often referred to collectively as the “Misskey API”). Paths, payloads, and client expectations diverge from Mastodon’s. Discord’s Mastodon connection is not wired to that API; this utility cannot bridge that gap:
 
 | Platform  | API Compatibility |
 |-----------|-------------------|
@@ -71,25 +83,34 @@ The following platforms implement a divergent API architecture (the Misskey API)
 | Calckey   | Incompatible      |
 | Foundkey  | Incompatible      |
 
-Instance compatibility is automatically verified during the set-up procedure by querying the instance's API endpoint directly. The tool will report the result and, in the event of an incompatible or unreachable instance, will prompt the user to confirm whether they wish to proceed.
+Handles on those instances are unsuitable for this tool and for Discord’s Mastodon linkage: validation should fail early, and **continuing past a warning does not add Mastodon API support** on the server.
+
+### Runtime behaviour
+
+During set-up the instance is queried directly; the tool reports reachability, a compatible-looking API, or a detected incompatible stack. If the check fails or the host is unreachable, you are asked whether to **continue anyway**; that choice only affects local configuration, not whether Discord can complete a Misskey-style account as “Mastodon.”
 
 ---
 
-## Supported Operating Systems and Architectures
+## Supported operating systems (Unix-like and Windows)
 
-The following target combinations are supported and may be compiled via the Makefile:
+The program is maintained for **Unix-like environments** (Linux distributions, Apple macOS, typical BSD setups, and other POSIX-style systems where Go builds) and for **Microsoft Windows**. The same source tree builds a normal executable on each: the `pkg/terminal` package selects behaviour with `//go:build` so password input and screen clearing match the host OS.
 
-| Operating System | Architecture     | Binary Suffix              |
-|------------------|------------------|----------------------------|
-| Linux            | x86\_64 (amd64)  | `fediscord-linux-amd64`    |
-| Linux            | ARM64 (AArch64)  | `fediscord-linux-arm64`    |
-| Linux            | ARMv6            | `fediscord-linux-arm`      |
-| Linux            | x86 (32-bit)     | `fediscord-linux-386`      |
-| macOS            | Intel (amd64)    | `fediscord-darwin-amd64`   |
-| macOS            | Apple Silicon    | `fediscord-darwin-arm64`   |
-| Windows          | x86\_64 (amd64)  | `fediscord-windows-amd64.exe` |
-| Windows          | ARM64            | `fediscord-windows-arm64.exe` |
-| Windows          | x86 (32-bit)     | `fediscord-windows-386.exe`   |
+### Unix-like (Linux, macOS, BSD, and similar)
+
+- **Binary name:** `fediscord` (no file extension).
+- **Build on the machine you use:** From the repository root run `make build` or `go build -o fediscord ./cmd/fediscord`. You get a binary for **that host’s** operating system and CPU architecture.
+- **Run:** `./fediscord` after `cd`-ing into the directory, or install/copy the file onto your `PATH` and run `fediscord`.
+- **Executable permission:** If the shell reports “Permission denied”, mark the file executable once: `chmod +x fediscord`.
+- **BSD and other Unix-like OSes:** The Makefile’s cross-compile list focuses on Linux and macOS; for FreeBSD, OpenBSD, and similar, compile **on** that system with `go build -o fediscord ./cmd/fediscord`, or set `GOOS` / `GOARCH` manually with the Go toolchain (no extra assembler toolchain is required for this project).
+
+### Windows
+
+- **Binary name:** `fediscord.exe`.
+- **Build on Windows:** Install [Go](https://go.dev/dl/) for Windows, then from the repo run `go build -o fediscord.exe ./cmd/fediscord`. If `make` is available (MSYS2, WSL cross-build, etc.), `make build` emits `fediscord.exe` when building for Windows.
+- **Run:** Start `fediscord.exe` from Command Prompt, PowerShell, or Windows Terminal. Add the folder that contains it to your user **PATH** if you want to launch it without typing a full path.
+- **Naming:** Unlike Unix-like builds, Windows expects the `.exe` suffix; omitting it is only for POSIX hosts.
+
+Cross-compilation and pre-built-style output file names (`fediscord-linux-amd64`, `fediscord-windows-amd64.exe`, and so on) are described under [Building](#building) and [Makefile Reference](#makefile-reference).
 
 ---
 
@@ -155,35 +176,23 @@ This target executes the following steps in sequence:
 
 1. Fetches and tidies all Go module dependencies (`golang.org/x/term`).
 2. Executes `go vet` across all packages to identify potential static analysis issues.
-3. Compiles the binary and places it at `./fediscord` (or `./fediscord.exe` on Windows when using `go build` directly).
+3. Compiles the binary; on Unix-like hosts the default output is `./fediscord`, while on Windows Go writes `./fediscord.exe` when the `-o` name has no suffix.
 
 The version string embedded in the binary is derived from `git describe --tags --always --dirty`. In the absence of git tags, the string `dev` is substituted.
 
-To verify the build was successful:
-
-```sh
-./fediscord
-```
-
-The interactive menu will be presented immediately upon execution.
+To verify the build was successful, run the binary you just produced (Unix-like: `./fediscord`; Windows: `fediscord.exe` or `.\fediscord.exe`). The interactive menu should start immediately.
 
 ### Cross-Compilation
 
-Individual platform targets may be compiled without executing a full release build. Each target is self-contained and places the resulting binary under `./dist/`:
+From a **Unix-like** build host (Linux, macOS, etc.) you can emit additional CPU/OS combinations into `./dist/` without extra C toolchains. Targets are grouped as **Unix-like artifacts** (`linux-*`, `darwin-*`) and **Windows** (`windows-*`, each producing an `.exe`):
 
 ```sh
-make linux-amd64
-make linux-arm64
-make linux-arm
-make linux-386
-make darwin-amd64
-make darwin-arm64
-make windows-amd64
-make windows-arm64
-make windows-386
+make linux-amd64 linux-arm64 linux-arm linux-386
+make darwin-amd64 darwin-arm64
+make windows-amd64 windows-arm64 windows-386
 ```
 
-No external cross-compilation toolchain is required. Go's native cross-compilation support is used throughout; the `GOOS` and `GOARCH` environment variables are set explicitly for each target.
+Go sets `GOOS` and `GOARCH` for each rule. Run `make help` for the full list. To build every cross target in one step, use `make release` (see below).
 
 ### Release Build (All Platforms)
 
@@ -270,9 +279,20 @@ The interface clears the screen between views (where the terminal supports it). 
   Main Menu
 ================================================================
 
-This tool builds the Discord authorisation URL used to link your
-Fediverse account (Mastodon-style API) to your Discord profile.
-Your token and handle are stored only on this computer.
+What this does:
+  Discord can show your Fediverse account on your profile once it has verified
+  that you control that identity. Discord asks you to approve that link via a
+  special URL (OAuth-style flow hosted by Discord and/or your instance).
+
+How fediscord helps:
+  Options 1-3 configure your Discord user token and Fediverse handle on disk.
+  Option 2 calls Discord APIs with your saved token only to obtain that link;
+  copy it into your browser, sign into your Fediverse account if prompted, then
+  approve. fediscord does not run that browser step or store your Mastodon login.
+
+Privacy:
+  Your Discord token and Fediverse handle live only on this machine and are
+  written under your OS config folder (plain text or GPG, per your choices).
 
 Status: Discord token saved: yes  |  Fediverse handle saved: yes
 Next: choose 2 (Generate Connection URL), then open it in your browser.
@@ -471,7 +491,7 @@ Executing `make` without specifying a target displays the full help output, incl
 
 | Target          | Description                                                         |
 |-----------------|---------------------------------------------------------------------|
-| `build`         | Compile the binary for the host platform; output: `./fediscord`     |
+| `build`         | Compile for the host platform; `./fediscord` (Unix-like) or `./fediscord.exe` (Windows) |
 | `install`       | Install the binary to `$(DESTDIR)/usr/local/bin/fediscord`          |
 | `uninstall`     | Remove the binary from `$(DESTDIR)/usr/local/bin/fediscord`         |
 | `clean`         | Remove `./fediscord` and the `./dist/` directory                    |
@@ -507,7 +527,7 @@ The following platform-specific notes apply to operation on Microsoft Windows:
 
 - The configuration directory is located at `~/Library/Application Support/fediverse-discord/`, consistent with macOS application data conventions.
 - GPG encryption is fully supported. Install GPG via Homebrew (`brew install gnupg`) to enable encrypted token storage.
-- Both Intel (`darwin/amd64`) and Apple Silicon (`darwin/arm64`) targets are supported. The `darwin-arm64` target produces a native binary for M-series hardware and should be preferred on those systems.
+- Intel and Apple Silicon are supported; on M-series Macs, prefer a native `go build` or the `darwin-arm64` cross target when producing binaries for that machine.
 - The binary is unsigned. On macOS 12 (Monterey) and later, Gatekeeper may prevent execution of unsigned binaries downloaded from the internet. To permit execution after download, run: `xattr -d com.apple.quarantine ./fediscord`.
 
 ---
