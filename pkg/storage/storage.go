@@ -2,8 +2,10 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -37,9 +39,18 @@ func SetEncryptionPreference(paths *config.Paths, useEncryption bool) error {
 }
 
 func StoreTokenEncrypted(paths *config.Paths, token string) error {
-	cmd := exec.Command("gpg", "--symmetric", "--cipher-algo", "AES256", "--output", paths.TokenEncrypted)
+	if err := ensureParentDir(paths.TokenEncrypted); err != nil {
+		return err
+	}
+	// --yes: avoid overwrite confirmation on stdin (stdin carries only the token).
+	cmd := exec.Command("gpg", "--symmetric", "--cipher-algo", "AES256", "--yes", "--output", paths.TokenEncrypted)
 	cmd.Stdin = strings.NewReader(token)
-	if err := cmd.Run(); err != nil {
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg != "" {
+			return fmt.Errorf("%w: %s", err, msg)
+		}
 		return err
 	}
 	if err := os.Chmod(paths.TokenEncrypted, 0600); err != nil {
@@ -116,6 +127,13 @@ func fileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+func ensureParentDir(path string) error {
+	return os.MkdirAll(filepath.Dir(path), 0700)
+}
+
 func writeFile(path string, data []byte, perm os.FileMode) error {
+	if err := ensureParentDir(path); err != nil {
+		return err
+	}
 	return os.WriteFile(path, data, perm)
 }

@@ -402,6 +402,15 @@ func showHelpScreen(paths *config.Paths) {
 	ui.Info("  This tool checks /api/v1/instance; Misskey forks are incompatible.")
 	fmt.Println()
 
+	ui.Info("Instance compatibility (Mastodon-style API):")
+	ui.Info("  Discord Mastodon connections need your server to speak the Mastodon REST API,")
+	ui.Info("  including endpoints such as /api/v1/instance, so this tool can probe your host.")
+	ui.Info("  Usually compatible: Mastodon, Akkoma, Pleroma, Glitch-Soc, Hometown, and peers")
+	ui.Info("  that expose the same v1-style endpoints.")
+	ui.Info("  Not compatible: Misskey, Firefish, Calckey, Foundkey (different API layout).")
+	ui.Info("  Unsure? Use option 1; the tool probes your instance and you can cancel.")
+	fmt.Println()
+
 	ui.Info("Where data is stored (paths only; no secrets):")
 	ui.Separator()
 	ui.Info("  Directory:          " + paths.Dir)

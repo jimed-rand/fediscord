@@ -11,12 +11,17 @@ import (
 
 const dividerWidth = 64
 
+// One reader for stdin so buffered lines stay in sync with term.ReadPassword on the same fd.
+var stdin = bufio.NewReader(os.Stdin)
+
 func rule(ch rune) {
 	fmt.Println(strings.Repeat(string(ch), dividerWidth))
 }
 
 func ClearScreen() {
-	fmt.Print(terminal.ClearScreen())
+	if terminal.IsTerminal() {
+		fmt.Print(terminal.ClearScreen())
+	}
 }
 
 func PrintHeader(title string) {
@@ -31,19 +36,13 @@ func PrintHeader(title string) {
 
 func PrintOverview() {
 	fmt.Println("What this does:")
-	fmt.Println("  Discord can show your Fediverse account on your profile once it has verified")
-	fmt.Println("  that you control that identity. Discord asks you to approve that link via a")
-	fmt.Println("  special URL (OAuth-style flow hosted by Discord and/or your instance).")
-	fmt.Println()
-	fmt.Println("How fediscord helps:")
-	fmt.Println("  Options 1-3 configure your Discord user token and Fediverse handle on disk.")
-	fmt.Println("  Option 2 calls Discord APIs with your saved token only to obtain that link;")
-	fmt.Println("  copy it into your browser, sign into your Fediverse account if prompted, then")
-	fmt.Println("  approve. fediscord does not run that browser step or store your Mastodon login.")
+	fmt.Println("  Link a Mastodon-style Fediverse account to Discord: you save a Discord user")
+	fmt.Println("  token and your handle here; option 2 prints the URL you open in a browser to")
+	fmt.Println("  finish verification on Discord and your instance.")
 	fmt.Println()
 	fmt.Println("Privacy:")
-	fmt.Println("  Your Discord token and Fediverse handle live only on this machine and are")
-	fmt.Println("  written under your OS config folder (plain text or GPG, per your choices).")
+	fmt.Println("  Token and handle stay on this machine (plain text or GPG, under your OS config")
+	fmt.Println("  folder). fediscord does not run the browser step or store your instance login.")
 	fmt.Println()
 }
 
@@ -103,28 +102,16 @@ func PrintMenu() {
 	fmt.Println()
 
 	Separator()
-	fmt.Println("Fediverse stacks and Mastodon-compatible API:")
-	fmt.Println("  Discord Mastodon Connections expect a Mastodon-style REST API (for example")
-	fmt.Println("  `/api/v1/instance`). Your instance must expose that protocol for this tool to")
-	fmt.Println("  validate your handle and for linking to succeed.")
-	fmt.Println()
-	fmt.Println("  Usually okay (known to ship Mastodon API compatibility):")
-	fmt.Println("    Mastodon, Akkoma, Pleroma, GlitchSoc, Hometown, and peers that emulate")
-	fmt.Println("    the same Mastodon v1 endpoints.")
-	fmt.Println()
-	fmt.Println("  Not usable here (different API; Misskey-derived, not Mastodon-compatible):")
-	fmt.Println("    Misskey, Firefish, Calckey, Foundkey - they use another API layout, so")
-	fmt.Println("    ownership checks Discord expects cannot be completed.")
-	fmt.Println()
-	fmt.Println("  Not sure? Use option 1: the tool probes your instance; you can bail out.")
+	fmt.Println("  Which instances work? Discord expects a Mastodon-compatible API (e.g. /api/v1/instance).")
+	fmt.Println("  Mastodon, Akkoma, Pleroma, and similar usually work; Misskey-style APIs do not.")
+	fmt.Println("  Press h or ? for full help, paths, and compatibility notes.")
 	Separator()
 	fmt.Println()
 }
 
 func Prompt(label string) string {
 	fmt.Print(label)
-	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
+	line, _ := stdin.ReadString('\n')
 	return strings.TrimSpace(line)
 }
 
